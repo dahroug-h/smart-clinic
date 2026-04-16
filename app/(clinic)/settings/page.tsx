@@ -10,7 +10,7 @@ export default async function SettingsPage() {
   const supabase = createServerSupabaseClient();
   const { data: clinic } = await supabase
     .from("clinics")
-    .select("id, whatsapp_phone_id, whatsapp_number, whatsapp_access_token")
+    .select("id, clinic_name, whatsapp_phone_id, whatsapp_number, whatsapp_access_token")
     .eq("clerk_user_id", userId)
     .single();
 
@@ -32,7 +32,7 @@ export default async function SettingsPage() {
           لا تنس الضغط على زر "حفظ إعدادات البوت" بعد انتهاء التعديل
         </p>
       </div>
-      <SettingsForm clinicId={clinic.id} initialContent={content || {}} />
+      <SettingsForm clinicId={clinic.id} clinicName={clinic.clinic_name} initialContent={content || {}} />
       <WhatsAppSettingsForm
         clinicId={clinic.id}
         whatsappPhoneId={clinic.whatsapp_phone_id}

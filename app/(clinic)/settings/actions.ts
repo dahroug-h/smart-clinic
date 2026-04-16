@@ -16,6 +16,11 @@ export async function saveSettings(clinicId: string, formData: FormData) {
     cancellation_allowed: formData.get("cancellation_allowed") === "true",
   };
 
+  const clinicName = formData.get("clinic_name") as string;
+  if (clinicName && clinicName.trim() !== "") {
+    await supabase.from("clinics").update({ clinic_name: clinicName.trim() }).eq("id", clinicId);
+  }
+
   // Check if content exists
   const { data: existing } = await supabase
     .from("clinic_content")

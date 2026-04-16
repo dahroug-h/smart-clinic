@@ -93,7 +93,7 @@ export default async function ClinicLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-8">
+      <main className="flex-1 overflow-auto p-8 relative">
         {children}
       </main>
     </div>

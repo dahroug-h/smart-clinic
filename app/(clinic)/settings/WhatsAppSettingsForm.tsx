@@ -49,7 +49,7 @@ export default function WhatsAppSettingsForm({
             )}
           </div>
           <p className="text-sm text-muted-foreground mb-6">
-            هتلاقي البيانات دي في Meta Developer Dashboard بتاعك — شوف الفيديو التعليمي للمساعدة
+            هتلاقي البيانات دي في Meta Developer Dashboard بتاعك — <a href="https://youtu.be/dGCPr_-WELg?si=fMSD2OMrsR-K9ssT" target="_blank" rel="noopener noreferrer" className="text-[var(--accent)] font-semibold hover:underline bg-[var(--accent)]/10 px-2 py-0.5 rounded">شوف الفيديو التعليمي للمساعدة</a>
           </p>
         </div>
 

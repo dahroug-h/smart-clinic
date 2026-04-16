@@ -3,7 +3,7 @@ import { useState } from "react";
 import { saveSettings } from "./actions";
 import toast from "react-hot-toast";
 
-export default function SettingsForm({ clinicId, initialContent }: { clinicId: string, initialContent: any }) {
+export default function SettingsForm({ clinicId, clinicName, initialContent }: { clinicId: string, clinicName: string | null, initialContent: any }) {
   const [isPending, setIsPending] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -23,10 +23,23 @@ export default function SettingsForm({ clinicId, initialContent }: { clinicId: s
   return (
     <form onSubmit={handleSubmit} className="space-y-12 pb-24">
       {/* 1. Clinic Information */}
-      <section className="bg-white p-6 rounded-xl border border-[var(--border)] shadow-sm space-y-4">
-        <h2 className="text-xl font-semibold">1. معلومات العيادة</h2>
+      <section className="bg-white p-6 rounded-xl border border-[var(--border)] shadow-sm space-y-6">
+        <h2 className="text-xl font-semibold">1. هويّة ومعلومات العيادة</h2>
+        
         <div>
-          <label className="block text-sm font-medium mb-2">اكتب كل حاجة عن العيادة — الاسم، العنوان، التخصص، الخدمات، الأسعار، رقم التليفون، اسم الدكتور، أي تفاصيل المريض محتاج يعرفها</label>
+          <label className="block text-sm font-medium mb-2">اسم العيادة الخاص بك</label>
+          <input
+            type="text"
+            name="clinic_name"
+            defaultValue={clinicName || ""}
+            required
+            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            placeholder="مثال: عيادة النور التخصصية"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">معلومات مفصلة للبوت — العنوان، التخصص، الخدمات، الأسعار، رقم التليفون، اسم الدكتور، الخ</label>
           <textarea
             name="clinic_info"
             defaultValue={initialContent.clinic_info || ""}
@@ -58,7 +71,7 @@ export default function SettingsForm({ clinicId, initialContent }: { clinicId: s
           <label className="block text-sm font-medium mb-2">شخصية البوت</label>
           <textarea
             name="bot_persona"
-            defaultValue={initialContent.bot_persona || ""}
+            defaultValue={initialContent.bot_persona || "بوت بيتكلم باسلوب ودى و محترف"}
             className="w-full h-20 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
             placeholder="مثال: بوت اسمه رنا، بتتكلم بأسلوب ودي وخفيف، زي موظفة استقبال شاطرة"
           />
