@@ -2,7 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/utils/supabase";
 import Link from "next/link";
-import { LayoutDashboard, Settings, CreditCard } from "lucide-react";
+import { LayoutDashboard, Settings, CreditCard, MessageCircle } from "lucide-react";
 import { UserButton as ClerkUserButton } from "@clerk/nextjs";
 
 export default async function ClinicLayout({
@@ -70,6 +70,13 @@ export default async function ClinicLayout({
           >
             <LayoutDashboard className="h-5 w-5 ml-3 text-muted-foreground" />
             لوحة التحكم
+          </Link>
+          <Link
+            href="/chat"
+            className="flex items-center px-3 py-2 text-sm font-medium rounded-md text-[var(--foreground)] hover:bg-gray-50"
+          >
+            <MessageCircle className="h-5 w-5 ml-3 text-muted-foreground" />
+            المحادثات
           </Link>
           <Link
             href="/settings"
