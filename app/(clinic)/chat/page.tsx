@@ -31,7 +31,7 @@ export default async function ChatPage() {
     .eq("clinic_id", clinic.id);
 
   return (
-    <div className="h-[calc(100vh-8rem)] -mx-4 -my-4 sm:-mx-8 sm:-my-8">
+    <div className="absolute inset-0">
       <ChatInterface 
         clinicId={clinic.id} 
         initialBotActive={clinic.bot_active !== false} 

@@ -116,6 +116,30 @@ export default function ChatInterface({
     if (!activeConversation) return;
     if (!inputText.trim() && !mediaUrl) return;
 
+    const messageContent = inputText.trim();
+    setInputText("");
+
+    // Optimistic UI Update
+    const optimisticMsg: Message = {
+      id: crypto.randomUUID(),
+      role: 'agent',
+      type: mediaUrl ? 'image' : 'text',
+      content: messageContent,
+      media_url: mediaUrl || undefined,
+      created_at: new Date().toISOString()
+    };
+
+    setConversations(prev => prev.map(c => {
+      if (c.id === activeConversation.id) {
+        return {
+          ...c,
+          messages: [...(c.messages || []), optimisticMsg],
+          last_message_at: new Date().toISOString()
+        };
+      }
+      return c;
+    }).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()));
+
     setIsSending(true);
     try {
       const res = await fetch("/api/chat/send", {
@@ -125,15 +149,21 @@ export default function ChatInterface({
           clinicId,
           conversationId: activeConversation.id,
           patientPhone: activeConversation.patient_phone,
-          messageText: inputText.trim(),
+          messageText: messageContent,
           mediaUrl: mediaUrl || null
         })
       });
 
       if (!res.ok) throw new Error("Failed");
-      setInputText("");
     } catch (err) {
       toast.error("فشل إرسال الرسالة. تحقق من الواتساب.");
+      // Rollback optimistic update on failure (optional but recommended for robust UI)
+      setConversations(prev => prev.map(c => {
+        if (c.id === activeConversation.id) {
+          return { ...c, messages: c.messages.filter(m => m.id !== optimisticMsg.id) };
+        }
+        return c;
+      }));
     } finally {
       setIsSending(false);
     }
@@ -167,24 +197,25 @@ export default function ChatInterface({
 
     setUploadingImage(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${clinicId}/${fileName}`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('clinicId', clinicId);
 
-      const { error: uploadError } = await supabase.storage
-        .from('chat_media')
-        .upload(filePath, file);
+      const res = await fetch('/api/chat/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-      if (uploadError) throw uploadError;
+      if (!res.ok) throw new Error("Upload Failed");
 
-      const { data } = supabase.storage.from('chat_media').getPublicUrl(filePath);
-      
-      if (data?.publicUrl) {
-        await handleSendMessage(data.publicUrl);
+      const data = await res.json();
+      if (data.url) {
+        toast.success("تم رفع الصورة، جاري الإرسال...");
+        await handleSendMessage(data.url);
       }
     } catch (error) {
       console.error(error);
-      toast.error("فشل رفع الصورة تأكد من إعدادات قاعدة البيانات");
+      toast.error("فشل رفع الصورة تأكد من إعدادات قاعدة البيانات والصلاحيات");
     } finally {
       setUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -276,6 +307,9 @@ export default function ChatInterface({
                 let displayContent = msg.content || "";
                 if (displayContent.includes("<<<ACTION>>>")) {
                   displayContent = displayContent.split("<<<ACTION>>>")[0].trim();
+                }
+                if (displayContent.includes("[ملاحظة للبوت:")) {
+                  displayContent = displayContent.split("[ملاحظة للبوت:")[0].trim();
                 }
 
                 return (
