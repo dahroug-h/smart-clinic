@@ -49,16 +49,16 @@ export default function ChatInterface({
   const [botActive, setBotActive] = useState(initialBotActive);
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
-  
+
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   const activeConversation = conversations.find(c => c.id === selectedConvId);
-  const activePatient = activeConversation 
+  const activePatient = activeConversation
     ? patients.find(p => p.phone === activeConversation.patient_phone)
     : null;
 
@@ -224,13 +224,13 @@ export default function ChatInterface({
 
   return (
     <div className="flex h-full bg-[#f0f2f5] overflow-hidden">
-      
+
       {/* Sidebar List */}
       <div className="w-1/3 lg:w-1/4 bg-white border-l border-[var(--border)] flex flex-col">
         <div className="p-4 bg-[#f0f2f5] border-b border-[var(--border)] flex items-center justify-between shadow-sm">
           <h2 className="font-bold text-lg text-[var(--foreground)]">المحادثات</h2>
           {/* Bot Toggle */}
-          <button 
+          <button
             onClick={handleToggleBot}
             className={clsx(
               "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all",
@@ -250,9 +250,9 @@ export default function ChatInterface({
             conversations.map(conv => {
               const p = patients.find(pat => pat.phone === conv.patient_phone);
               const lastMsg = conv.messages && conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null;
-              
+
               return (
-                <div 
+                <div
                   key={conv.id}
                   onClick={() => setSelectedConvId(conv.id)}
                   className={clsx(
@@ -314,7 +314,7 @@ export default function ChatInterface({
 
                 return (
                   <div key={msg.id || idx.toString()} className={clsx("flex", isOutgoing ? "justify-end" : "justify-start")}>
-                    <div 
+                    <div
                       className={clsx(
                         "relative group max-w-[80%] md:max-w-[65%] rounded-lg p-3 shadow-sm",
                         isOutgoing ? "bg-[#d9fdd3] text-gray-800 rounded-tr-none" : "bg-white text-gray-800 rounded-tl-none"
@@ -323,8 +323,8 @@ export default function ChatInterface({
                     >
                       {/* Sub-label for AI vs Manual */}
                       {isOutgoing && (
-                        <div className="text-[10px] text-gray-400 mb-1 flex justify-between items-center">
-                          <span>{msg.role === "agent" ? "💁‍♂️ الإدارة (يدوي)" : "🤖 الرد الآلي"}</span>
+                        <div className="text-[10px] text-black-400 mb-1 flex justify-between items-center">
+                          <span>{msg.role === "agent" ? "يدوي" : " الرد الآلي"}</span>
                         </div>
                       )}
 
@@ -334,7 +334,7 @@ export default function ChatInterface({
                           <img src={msg.media_url} alt="Media" className="max-w-full h-auto max-h-[300px] object-cover" />
                         </div>
                       )}
-                      
+
                       {displayContent && (
                         <p className="whitespace-pre-wrap text-black font-medium leading-relaxed">{displayContent}</p>
                       )}
@@ -342,7 +342,7 @@ export default function ChatInterface({
                       {/* Timestamp & Delete */}
                       <div className="flex justify-end items-center gap-2 mt-2">
                         {msg.id && (
-                          <button 
+                          <button
                             onClick={() => handleDeleteMessage(msg.id!)}
                             className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity"
                             title="حذف من لوحة التحكم"
@@ -350,9 +350,9 @@ export default function ChatInterface({
                             <Trash2 className="w-3 h-3" />
                           </button>
                         )}
-                        {msg.created_at && (
+                        {(msg.created_at || activeConversation.last_message_at) && (
                           <span className="text-[10px] text-gray-500">
-                            {new Date(msg.created_at).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(msg.created_at || activeConversation.last_message_at).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
                       </div>
@@ -365,7 +365,7 @@ export default function ChatInterface({
 
             {/* Input Footer */}
             <div className="p-3 bg-[#f0f2f5] flex items-end gap-2">
-              <button 
+              <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingImage || isSending}
@@ -373,16 +373,16 @@ export default function ChatInterface({
               >
                 {uploadingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-6 h-6" />}
               </button>
-              <input 
-                type="file" 
-                accept="image/*" 
-                className="hidden" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
               />
-              
+
               <div className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm">
-                <textarea 
+                <textarea
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => {
@@ -398,7 +398,7 @@ export default function ChatInterface({
                 />
               </div>
 
-              <button 
+              <button
                 onClick={() => handleSendMessage()}
                 disabled={(!inputText.trim() && !uploadingImage) || isSending}
                 className="p-3 bg-[var(--accent)] text-white rounded-full hover:bg-teal-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
