@@ -234,7 +234,7 @@ export default function ChatInterface({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-bold truncate text-[var(--foreground)]">{p?.name || conv.patient_phone}</span>
+                      <span className="font-bold truncate text-[var(--foreground)]">{p?.name || `+${conv.patient_phone.replace(/^\+/, '')}`}</span>
                       <span className="text-xs text-gray-400">
                         {new Date(conv.last_message_at).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' })}
                       </span>
@@ -260,18 +260,23 @@ export default function ChatInterface({
                 <UserIcon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-[var(--foreground)]">{activePatient?.name || activeConversation.patient_phone}</h3>
-                <p className="text-xs text-gray-500" dir="ltr">{activeConversation.patient_phone}</p>
+                <h3 className="font-bold text-[var(--foreground)]">{activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`}</h3>
+                <p className="text-xs text-gray-500" dir="ltr">+{activeConversation.patient_phone.replace(/^\+/, '')}</p>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ backgroundImage: "url('/whatsapp-bg.png')", backgroundSize: "cover", opacity: 0.9 }}>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#efeae2]">
               {activeConversation.messages.map((msg, idx) => {
                 // Determine layout
                 // User (patient) = incoming = white bubble on right (in RTL)
                 // Assistant / Agent = outgoing = green bubble on left (in RTL)
                 const isOutgoing = msg.role === "assistant" || msg.role === "agent";
+
+                let displayContent = msg.content || "";
+                if (displayContent.includes("<<<ACTION>>>")) {
+                  displayContent = displayContent.split("<<<ACTION>>>")[0].trim();
+                }
 
                 return (
                   <div key={msg.id || idx.toString()} className={clsx("flex", isOutgoing ? "justify-end" : "justify-start")}>
@@ -296,8 +301,8 @@ export default function ChatInterface({
                         </div>
                       )}
                       
-                      {msg.content && (
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      {displayContent && (
+                        <p className="whitespace-pre-wrap text-black font-medium leading-relaxed">{displayContent}</p>
                       )}
 
                       {/* Timestamp & Delete */}
