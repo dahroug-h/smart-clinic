@@ -2,7 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/utils/supabase";
 import Link from "next/link";
-import { LayoutDashboard, Settings, CreditCard, UserButton } from "lucide-react";
+import { LayoutDashboard, Settings, CreditCard } from "lucide-react";
 import { UserButton as ClerkUserButton } from "@clerk/nextjs";
 
 export default async function ClinicLayout({
