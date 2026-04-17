@@ -120,18 +120,18 @@ export default async function DashboardPage() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg border border-[var(--border)] shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">محادثات هذا الشهر</h3>
-          <p className="text-3xl font-bold mt-2">{convCount}</p>
+      <div className="grid grid-cols-3 gap-3 md:gap-6">
+        <div className="bg-white p-3 md:p-6 rounded-lg border border-[var(--border)] shadow-sm text-center flex flex-col justify-center">
+          <h3 className="text-[10px] md:text-sm font-medium text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">محادثات الشهر</h3>
+          <p className="text-lg md:text-3xl font-bold mt-1 md:mt-2 leading-none">{convCount}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg border border-[var(--border)] shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">حجوزات هذا الشهر</h3>
-          <p className="text-3xl font-bold mt-2">{bookingsCount}</p>
+        <div className="bg-white p-3 md:p-6 rounded-lg border border-[var(--border)] shadow-sm text-center flex flex-col justify-center">
+          <h3 className="text-[10px] md:text-sm font-medium text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">حجوزات الشهر</h3>
+          <p className="text-lg md:text-3xl font-bold mt-1 md:mt-2 leading-none">{bookingsCount}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg border border-[var(--border)] shadow-sm">
-          <h3 className="text-sm font-medium text-muted-foreground">إلغاءات هذا الشهر</h3>
-          <p className="text-3xl font-bold mt-2">{cancellationsCount}</p>
+        <div className="bg-white p-3 md:p-6 rounded-lg border border-[var(--border)] shadow-sm text-center flex flex-col justify-center">
+          <h3 className="text-[10px] md:text-sm font-medium text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis">إلغاءات الشهر</h3>
+          <p className="text-lg md:text-3xl font-bold mt-1 md:mt-2 leading-none">{cancellationsCount}</p>
         </div>
       </div>
 
@@ -139,8 +139,9 @@ export default async function DashboardPage() {
         <div className="px-4 md:px-6 py-4 border-b border-[var(--border)]">
           <h2 className="text-lg font-semibold">المواعيد الأخيرة</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-sm min-w-[600px]">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-right text-sm">
             <thead className="bg-gray-50 text-muted-foreground">
             <tr>
               <th className="px-6 py-3 font-medium">اسم المريض</th>
@@ -192,6 +193,51 @@ export default async function DashboardPage() {
             )}
           </tbody>
         </table>
+        </div>
+
+        {/* Mobile Cards Layout */}
+        <div className="block md:hidden divide-y divide-[var(--border)]">
+          {appointments?.length === 0 ? (
+            <div className="p-8 text-center text-muted-foreground text-sm">
+              لا توجد مواعيد حتى الآن
+            </div>
+          ) : (
+            appointments?.map(app => {
+              let displayTime = app.appointment_time;
+              if (displayTime) {
+                const parts = displayTime.split(":");
+                if (parts.length >= 2) {
+                  let h = parseInt(parts[0], 10);
+                  const m = parts[1];
+                  const ampm = h >= 12 ? "م" : "ص";
+                  h = h % 12 || 12;
+                  displayTime = `${h}:${m} ${ampm}`;
+                }
+              }
+              return (
+                <div key={app.id} className="p-4 space-y-3 bg-white hover:bg-gray-50/50 transition-colors">
+                  <div className="flex justify-between items-start gap-2">
+                    <h4 className="font-bold text-[var(--foreground)] truncate">{app.patient_name || app.patient_phone}</h4>
+                    <span className={clsx(
+                      "px-2.5 py-1 text-[10px] rounded-full font-bold shrink-0",
+                      app.status === 'confirmed' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                    )}>
+                      {app.status === 'confirmed' ? 'مؤكد' : 'ملغي'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-md border border-[var(--border)]">
+                    <span className="font-medium align-middle">{app.appointment_date}</span>
+                    <span className="font-bold text-[var(--accent)] align-middle" dir="ltr">{displayTime}</span>
+                  </div>
+                  
+                  <div className="pt-2 border-t border-gray-100 flex justify-end">
+                    <DeleteButton id={app.id} />
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>

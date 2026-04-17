@@ -22,8 +22,8 @@ export default async function SubscriptionPage() {
         <p className="text-muted-foreground"></p>
       </div>
 
-      <div className="bg-white p-6 md:p-12 rounded-xl border border-[var(--border)] shadow-sm text-center flex flex-col items-center justify-center w-full overflow-hidden">
-        <div className="w-full max-w-md mb-8 md:mb-12 pb-6 md:pb-8 border-b border-[var(--border)] space-y-4">
+      <div className="bg-white px-2 py-6 md:p-12 rounded-xl border border-[var(--border)] shadow-sm text-center flex flex-col items-center justify-center w-full overflow-hidden">
+        <div className="w-full max-w-none md:max-w-md mb-8 md:mb-12 pb-6 md:pb-8 border-b border-[var(--border)] space-y-4 px-2">
           <div className="flex justify-between items-center">
             <span className="font-medium text-lg text-muted-foreground">حالة الاشتراك الحالية:</span>
             <span className={clsx(
@@ -53,7 +53,7 @@ export default async function SubscriptionPage() {
         <div className="text-7xl font-black text-[var(--foreground)] tracking-tighter mb-6 select-all">
           #{clinic.payment_code}
         </div>
-        <div className="mt-8 bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-2xl p-4 md:p-8 text-center shadow-sm w-full max-w-lg">
+        <div className="mt-8 bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-2xl p-4 md:p-8 text-center shadow-sm w-full max-w-none md:max-w-lg">
           <div className="flex flex-wrap items-center gap-2 md:gap-3 justify-center mb-4">
             <div className="bg-white px-3 py-1.5 rounded-lg border border-[var(--accent)]/10 shadow-sm flex items-center justify-center">
               <img src="/InstaPay-logo.svg" alt="InstaPay" className="h-9 w-auto object-contain mix-blend-multiply" loading="lazy" />
@@ -71,7 +71,7 @@ export default async function SubscriptionPage() {
             <span className="text-xs font-bold text-[var(--accent)]">أو من خلال مسح الـ QR</span>
             <div className="h-px bg-[var(--accent)] flex-1 opacity-20"></div>
           </div>
-          <div className="relative w-full max-w-[420px] aspect-square mx-auto bg-white rounded-2xl border-2 border-[var(--border)] shadow-sm p-1 flex items-center justify-center overflow-hidden group">
+          <div className="relative w-full max-w-none md:max-w-[420px] aspect-square mx-auto bg-white rounded-2xl border-2 border-[var(--border)] shadow-sm p-1 flex items-center justify-center overflow-hidden group">
             <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground font-medium px-4 text-center z-0">
               <div>أضف الصورة هنا<br />(public/payment_insta_qr.jpeg)</div>
             </div>
