@@ -18,6 +18,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    console.log("[WEBHOOK] Received Meta POST Request:", JSON.stringify(body, null, 2));
 
     if (body.object === "whatsapp_business_account") {
       const entry = body.entry?.[0];
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
         }
 
         const phone_number_id = value.metadata.phone_number_id;
+        console.log(`[WEBHOOK] Searching for clinic with Phone Number ID: ${phone_number_id}`);
         
         // Find clinic via supabase using admin key (bypasses RLS)
         const supabase = createAdminSupabaseClient();
@@ -44,7 +46,12 @@ export async function POST(req: Request) {
            .single();
 
         // If no matching clinic found, just ignore
-        if (!clinic) return NextResponse.json({ success: true });
+        if (!clinic) {
+           console.log(`[WEBHOOK] ERROR: No clinic found matching phone_number_id ${phone_number_id} in Supabase! ignoring message.`);
+           return NextResponse.json({ success: true });
+        }
+
+        console.log(`[WEBHOOK] Found clinic:`, clinic.id);
 
         // Check subscription limits
         if (clinic.subscription_status === 'inactive') {
@@ -55,7 +62,7 @@ export async function POST(req: Request) {
         }
 
         // Trigger Edge Function asynchronously (do not await, Meta requires 200 OK within 3 seconds)
-        // We use process.env.EDGE_FUNCTION_SECRET if you added it, but here we just call the function directly
+        console.log(`[WEBHOOK] Triggering Edge Function /process-message for message: ${msg.text.body}`);
         fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-message`, {
            method: 'POST',
            headers: {
@@ -67,14 +74,16 @@ export async function POST(req: Request) {
              patient_phone: msg.from,
              message_text: msg.text.body
            })
-        }).catch(err => console.error("Edge function trigger failed", err));
+        }).catch(err => console.error("[WEBHOOK] Edge function trigger failed", err));
 
+      } else {
+        console.log("[WEBHOOK] No messages array found in changes.");
       }
     }
     
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("[WEBHOOK] Fatal Error processing POST:", err);
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }
