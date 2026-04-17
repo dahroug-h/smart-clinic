@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createAdminSupabaseClient } from '@/lib/utils/supabase';
 
+// In-memory idempotency lock to instantly block duplicate retries from Meta
+// Since Meta retries arrive within milliseconds, they hit the same warm node instance.
+const processedMessages = new Set<string>();
+
 // GET: Verify Webhook from Meta WhatsApp
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -28,6 +32,17 @@ export async function POST(req: Request) {
 
       if (messages && messages.length > 0) {
         const msg = messages[0];
+        const msgId = msg.id;
+
+        // Idempotency: Block duplicate processing exactly here
+        if (msgId && processedMessages.has(msgId)) {
+           console.log(`[WEBHOOK-IDEMPOTENCY] Message ${msgId} is already processing! Dropping duplicate...`);
+           return NextResponse.json({ success: true });
+        }
+        if (msgId) processedMessages.add(msgId);
+
+        // Memory leak protection: keep max 1000 IDs per Node instance
+        if (processedMessages.size > 1000) processedMessages.clear();
         
         // Only process text messages, ignore others (audio, image, etc)
         if (msg.type !== 'text') {
