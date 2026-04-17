@@ -136,11 +136,12 @@ export default async function DashboardPage() {
       </div>
 
       <div className="bg-white rounded-lg border border-[var(--border)] shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-[var(--border)]">
+        <div className="px-4 md:px-6 py-4 border-b border-[var(--border)]">
           <h2 className="text-lg font-semibold">المواعيد الأخيرة</h2>
         </div>
-        <table className="w-full text-right text-sm">
-          <thead className="bg-gray-50 text-muted-foreground">
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-sm min-w-[600px]">
+            <thead className="bg-gray-50 text-muted-foreground">
             <tr>
               <th className="px-6 py-3 font-medium">اسم المريض</th>
               <th className="px-6 py-3 font-medium">التاريخ</th>
@@ -191,6 +192,7 @@ export default async function DashboardPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

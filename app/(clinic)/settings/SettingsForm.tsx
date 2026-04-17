@@ -124,7 +124,7 @@ export default function SettingsForm({ clinicId, clinicName, initialContent }: {
       </section>
 
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t flex justify-center z-10 w-full ml-0 md:ml-64">
+      <div className="fixed bottom-0 left-0 right-0 md:right-64 p-4 bg-white border-t flex justify-center z-10">
         <button
           type="submit"
           disabled={isPending}

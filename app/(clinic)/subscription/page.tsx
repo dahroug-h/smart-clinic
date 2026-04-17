@@ -22,8 +22,8 @@ export default async function SubscriptionPage() {
         <p className="text-muted-foreground"></p>
       </div>
 
-      <div className="bg-white p-12 rounded-xl border border-[var(--border)] shadow-sm text-center flex flex-col items-center justify-center">
-        <div className="w-full max-w-md mb-12 pb-8 border-b border-[var(--border)] space-y-4">
+      <div className="bg-white p-6 md:p-12 rounded-xl border border-[var(--border)] shadow-sm text-center flex flex-col items-center justify-center w-full overflow-hidden">
+        <div className="w-full max-w-md mb-8 md:mb-12 pb-6 md:pb-8 border-b border-[var(--border)] space-y-4">
           <div className="flex justify-between items-center">
             <span className="font-medium text-lg text-muted-foreground">حالة الاشتراك الحالية:</span>
             <span className={clsx(
@@ -53,8 +53,8 @@ export default async function SubscriptionPage() {
         <div className="text-7xl font-black text-[var(--foreground)] tracking-tighter mb-6 select-all">
           #{clinic.payment_code}
         </div>
-        <div className="mt-8 bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-2xl p-8 text-center shadow-sm w-full max-w-lg">
-          <div className="flex items-center gap-3 justify-center mb-4">
+        <div className="mt-8 bg-[var(--accent)]/5 border border-[var(--accent)]/20 rounded-2xl p-4 md:p-8 text-center shadow-sm w-full max-w-lg">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 justify-center mb-4">
             <div className="bg-white px-3 py-1.5 rounded-lg border border-[var(--accent)]/10 shadow-sm flex items-center justify-center">
               <img src="/InstaPay-logo.svg" alt="InstaPay" className="h-9 w-auto object-contain mix-blend-multiply" loading="lazy" />
             </div>
@@ -85,8 +85,8 @@ export default async function SubscriptionPage() {
           </div>
         </div>
 
-        <div className="flex flex-col items-center mt-10 space-y-5">
-          <p className="text-lg text-muted-foreground max-w-md">
+        <div className="flex flex-col items-center mt-10 space-y-5 px-4 text-center">
+          <p className="text-sm md:text-lg text-muted-foreground max-w-md leading-relaxed">
             بعد الدفع ابعت اسكرين شوت للدفع + كود الدفع على واتساب عشان نفعّل اشتراكك
           </p>
           <a

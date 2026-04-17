@@ -2,7 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/utils/supabase";
 import Link from "next/link";
-import { LayoutDashboard, Settings, CreditCard, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Settings, CreditCard, MessageCircle, Menu, X } from "lucide-react";
 import { UserButton as ClerkUserButton } from "@clerk/nextjs";
 
 export default async function ClinicLayout({
@@ -57,11 +57,29 @@ export default async function ClinicLayout({
   }
 
   return (
-    <div className="flex h-screen bg-[var(--background)]">
+    <div className="flex h-screen bg-[var(--background)] flex-col md:flex-row w-full overflow-hidden">
+      
+      {/* Mobile Top Header */}
+      <div className="md:hidden h-16 bg-white border-b border-[var(--border)] flex items-center justify-between px-4 shrink-0 z-30">
+        <h2 className="font-bold text-lg text-[var(--accent)] tracking-tight">Smart Clinic</h2>
+        <label htmlFor="mobile-menu" className="p-2 -ml-2 cursor-pointer text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-100">
+          <Menu className="w-6 h-6" />
+        </label>
+      </div>
+
+      {/* Drawer State Input */}
+      <input type="checkbox" id="mobile-menu" className="peer hidden" />
+
+      {/* Backdrop overlay */}
+      <label htmlFor="mobile-menu" className="md:hidden fixed inset-0 bg-black/50 z-40 hidden peer-checked:block transition-opacity"></label>
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-l border-[var(--border)] flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-[var(--border)]">
+      <aside className="fixed inset-y-0 right-0 z-50 w-64 bg-white border-l border-[var(--border)] flex flex-col transform translate-x-full peer-checked:translate-x-0 md:static md:translate-x-0 transition-transform duration-300 ease-in-out">
+        <div className="h-16 flex items-center justify-between px-6 border-b border-[var(--border)]">
           <h2 className="font-bold text-lg text-[var(--accent)] tracking-tight">Smart Clinic</h2>
+          <label htmlFor="mobile-menu" className="md:hidden p-1 cursor-pointer text-gray-500 hover:text-gray-900 rounded-md hover:bg-gray-100">
+            <X className="w-5 h-5" />
+          </label>
         </div>
         <nav className="flex-1 py-4 px-3 space-y-1">
           <Link
@@ -100,7 +118,7 @@ export default async function ClinicLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-8 relative">
+      <main className="flex-1 overflow-auto p-4 md:p-8 relative">
         {children}
       </main>
     </div>

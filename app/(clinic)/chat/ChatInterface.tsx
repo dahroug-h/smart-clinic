@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { toggleBotActive } from "./actions";
-import { Send, Image as ImageIcon, Trash2, Bot, User as UserIcon, Loader2, MessageCircle } from "lucide-react";
+import { Send, Image as ImageIcon, Trash2, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import clsx from "clsx";
 
@@ -226,8 +226,11 @@ export default function ChatInterface({
     <div className="flex h-full bg-[#f0f2f5] overflow-hidden">
 
       {/* Sidebar List */}
-      <div className="w-1/3 lg:w-1/4 bg-white border-l border-[var(--border)] flex flex-col">
-        <div className="p-4 bg-[#f0f2f5] border-b border-[var(--border)] flex items-center justify-between shadow-sm">
+      <div className={clsx(
+        "w-full lg:w-1/4 bg-white border-l border-[var(--border)] flex-col",
+        selectedConvId ? "hidden md:flex" : "flex"
+      )}>
+        <div className="p-4 bg-[#f0f2f5] border-b border-[var(--border)] flex items-center justify-between shadow-sm shrink-0">
           <h2 className="font-bold text-lg text-[var(--foreground)]">المحادثات</h2>
           {/* Bot Toggle */}
           <button
@@ -282,17 +285,26 @@ export default function ChatInterface({
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-[#efeae2] relative">
+      <div className={clsx(
+        "flex-1 flex-col bg-[#efeae2] relative w-full h-full",
+        !selectedConvId ? "hidden md:flex" : "flex"
+      )}>
         {activeConversation ? (
-          <>
+          <div className="flex-1 flex flex-col h-full absolute inset-0">
             {/* Chat Header */}
-            <div className="h-16 bg-[#f0f2f5] border-b border-[var(--border)] px-4 flex items-center gap-3 shadow-sm z-10">
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+            <div className="h-16 bg-[#f0f2f5] border-b border-[var(--border)] px-4 flex items-center gap-3 shadow-sm z-10 shrink-0">
+              <button 
+                onClick={() => setSelectedConvId(null)}
+                className="md:hidden p-2 -mr-2 cursor-pointer text-gray-500 hover:text-gray-900 rounded-md hover:bg-gray-100 shrink-0"
+              >
+                <ArrowRight className="w-6 h-6" />
+              </button>
+              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
                 <UserIcon className="w-5 h-5" />
               </div>
-              <div>
-                <h3 className="font-bold text-[var(--foreground)]">{activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`}</h3>
-                <p className="text-xs text-gray-500" dir="ltr">+{activeConversation.patient_phone.replace(/^\+/, '')}</p>
+              <div className="min-w-0">
+                <h3 className="font-bold text-[var(--foreground)] truncate">{activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`}</h3>
+                <p className="text-xs text-gray-500 truncate" dir="ltr">+{activeConversation.patient_phone.replace(/^\+/, '')}</p>
               </div>
             </div>
 
@@ -401,14 +413,14 @@ export default function ChatInterface({
               <button
                 onClick={() => handleSendMessage()}
                 disabled={(!inputText.trim() && !uploadingImage) || isSending}
-                className="p-3 bg-[var(--accent)] text-white rounded-full hover:bg-teal-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="p-3 bg-[var(--accent)] text-white rounded-full hover:bg-teal-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shrink-0"
               >
                 {isSending ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
               </button>
             </div>
-          </>
+          </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center opacity-50 flex-col gap-4">
+          <div className="flex-1 flex items-center justify-center opacity-50 flex-col gap-4 h-full">
             <MessageCircle className="w-24 h-24 text-gray-400" />
             <p className="text-xl font-medium text-gray-500">اختر محادثة للبدء</p>
           </div>
