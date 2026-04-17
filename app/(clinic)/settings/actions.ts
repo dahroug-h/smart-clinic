@@ -54,9 +54,48 @@ export async function saveSettings(clinicId: string, formData: FormData) {
 export async function saveWhatsAppSettings(clinicId: string, formData: FormData) {
   const supabase = createServerSupabaseClient();
 
+  const phoneId = (formData.get("whatsapp_phone_id") as string || "").trim();
+  const phoneNumber = (formData.get("whatsapp_number") as string || "").trim();
+
+  if (phoneId && !/^\d+$/.test(phoneId)) {
+    return { error: "Phone Number ID يجب أن يحتوي على أرقام فقط بدون مسافات أو حروف" };
+  }
+
+  if (phoneNumber && !/^\+?\d{10,15}$/.test(phoneNumber)) {
+    return { error: "رقم الواتساب غير صالح، يجب أن يحتوي على أرقام فقط (علامة + مسموحة في البداية)" };
+  }
+
+  // Duplicate Check for Phone Number ID
+  if (phoneId) {
+    const { data: existingId } = await supabase
+      .from("clinics")
+      .select("id")
+      .eq("whatsapp_phone_id", phoneId)
+      .neq("id", clinicId)
+      .single();
+
+    if (existingId) {
+      return { error: "هذا الـ Phone Number ID مستخدم بالفعل لعيادة أخرى" };
+    }
+  }
+
+  // Duplicate Check for WhatsApp Number
+  if (phoneNumber) {
+    const { data: existingNum } = await supabase
+      .from("clinics")
+      .select("id")
+      .eq("whatsapp_number", phoneNumber)
+      .neq("id", clinicId)
+      .single();
+
+    if (existingNum) {
+      return { error: "رقم الواتساب هذا تم ربطه بعيادة أخرى مسبقاً" };
+    }
+  }
+
   const data: any = {
-    whatsapp_phone_id: formData.get("whatsapp_phone_id"),
-    whatsapp_number: formData.get("whatsapp_number"),
+    whatsapp_phone_id: phoneId,
+    whatsapp_number: phoneNumber,
   };
 
   const token = formData.get("whatsapp_access_token") as string;
@@ -71,7 +110,7 @@ export async function saveWhatsAppSettings(clinicId: string, formData: FormData)
 
   if (error) {
     console.error("Save WhatsApp settings error", error);
-    throw new Error(error.message);
+    return { error: "فشل حفظ البيانات. قد يكون هناك مشكلة في الاتصال بقاعدة البيانات." };
   }
   
   revalidatePath("/settings");

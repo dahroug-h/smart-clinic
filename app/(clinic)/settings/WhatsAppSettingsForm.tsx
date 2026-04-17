@@ -23,8 +23,13 @@ export default function WhatsAppSettingsForm({
     setIsPending(true);
     try {
       const formData = new FormData(e.currentTarget);
-      await saveWhatsAppSettings(clinicId, formData);
-      toast.success("تم تشفير وحفظ تفاصيل الواتساب بنجاح", { duration: 3000 });
+      const res = await saveWhatsAppSettings(clinicId, formData);
+      
+      if (res?.error) {
+        toast.error(res.error, { duration: 5000 });
+      } else {
+        toast.success("تم التحديث وحفظ تفاصيل الواتساب بنجاح", { duration: 3000 });
+      }
     } catch (err) {
       toast.error("حدث خطأ أثناء الاتصال. يرجى المحاولة مرة أخرى.");
     } finally {
