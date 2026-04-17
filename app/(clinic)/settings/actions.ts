@@ -54,8 +54,12 @@ export async function saveSettings(clinicId: string, formData: FormData) {
 export async function saveWhatsAppSettings(clinicId: string, formData: FormData) {
   const supabase = createServerSupabaseClient();
 
-  const phoneId = (formData.get("whatsapp_phone_id") as string || "").trim();
-  const phoneNumber = (formData.get("whatsapp_number") as string || "").trim();
+  let phoneId = (formData.get("whatsapp_phone_id") as string || "").trim();
+  let phoneNumber = (formData.get("whatsapp_number") as string || "").trim();
+
+  // Strip '+' cleanly so duplicate checking ignores formatting
+  phoneId = phoneId.replace(/^\+/, '');
+  phoneNumber = phoneNumber.replace(/^\+/, '');
 
   if (phoneId && !/^\d+$/.test(phoneId)) {
     return { error: "Phone Number ID يجب أن يحتوي على أرقام فقط بدون مسافات أو حروف" };
