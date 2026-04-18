@@ -100,7 +100,7 @@ serve(async (req) => {
       ? `\n[ملاحظة للبوت: البيانات المتأكدة من المحادثة السابقة: ${JSON.stringify(confirmedFields)}]`
       : "";
 
-    history.push({ role: "user", content: message_text + fieldSummary, created_at: new Date().toISOString() });
+    history.push({ id: crypto.randomUUID(), role: "user", content: message_text + fieldSummary, created_at: new Date().toISOString() });
 
     if (!botActive) {
       // Just record the incoming message to conversation history, but skip the AI
@@ -249,7 +249,7 @@ ${content.cancellation_allowed
       console.warn("⚠️ Failed to parse action sentinel from AI reply. Error:", e, "Raw Reply:", rawReply);
     }
 
-    history.push({ role: "assistant", content: rawReply, created_at: new Date().toISOString() });
+    history.push({ id: crypto.randomUUID(), role: "assistant", content: rawReply, created_at: new Date().toISOString() });
 
     // 7. Execute Actions (book, cancel)
     if (action?.action === "book") {
