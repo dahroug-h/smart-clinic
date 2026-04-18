@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { toggleBotActive } from "./actions";
-import { Send, Image as ImageIcon, Trash2, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight } from "lucide-react";
+import { Send, Image as ImageIcon, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import clsx from "clsx";
 
@@ -169,27 +169,7 @@ export default function ChatInterface({
     }
   };
 
-  const handleDeleteMessage = async (msgId: string) => {
-    if (!activeConversation) return;
-    const confirmDelete = window.confirm("هل أنت متأكد من حذف هذه الرسالة من لوحة التحكم؟ (الرسالة لن تُحذف من هاتف المريض)");
-    if (!confirmDelete) return;
 
-    try {
-      const res = await fetch("/api/chat/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clinicId,
-          conversationId: activeConversation.id,
-          messageId: msgId
-        })
-      });
-      if (!res.ok) throw new Error("Failed");
-      toast.success("تم الحذف");
-    } catch (error) {
-      toast.error("فشل الحذف");
-    }
-  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -353,15 +333,7 @@ export default function ChatInterface({
 
                       {/* Timestamp & Delete */}
                       <div className="flex justify-end items-center gap-2 mt-2">
-                        {msg.id && (
-                          <button
-                            onClick={() => handleDeleteMessage(msg.id!)}
-                            className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-opacity"
-                            title="حذف من لوحة التحكم"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        )}
+
                         {(msg.created_at || activeConversation.last_message_at) && (
                           <span className="text-[10px] text-gray-500">
                             {new Date(msg.created_at || activeConversation.last_message_at).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' })}
@@ -426,6 +398,8 @@ export default function ChatInterface({
           </div>
         )}
       </div>
+
+
 
     </div>
   );
