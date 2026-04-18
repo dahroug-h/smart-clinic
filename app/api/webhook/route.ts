@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminSupabaseClient } from '@/lib/utils/supabase';
 
-// In-memory idempotency lock to instantly block duplicate retries from Meta
-// Since Meta retries arrive within milliseconds, they hit the same warm node instance.
+// In-memory idempotency lock prevents Meta from retrying while AI thinks
 const processedMessages = new Set<string>();
 
 // GET: Verify Webhook from Meta WhatsApp
@@ -36,12 +35,10 @@ export async function POST(req: Request) {
 
         // Idempotency: Block duplicate processing exactly here
         if (msgId && processedMessages.has(msgId)) {
-           console.log(`[WEBHOOK-IDEMPOTENCY] Message ${msgId} is already processing! Dropping duplicate...`);
+           console.log(`[WEBHOOK-IDEMPOTENCY] Caught Meta retry for ${msgId}. Dropping duplicate...`);
            return NextResponse.json({ success: true });
         }
         if (msgId) processedMessages.add(msgId);
-
-        // Memory leak protection: keep max 1000 IDs per Node instance
         if (processedMessages.size > 1000) processedMessages.clear();
         
         // Only process text messages, ignore others (audio, image, etc)
@@ -76,20 +73,24 @@ export async function POST(req: Request) {
            return NextResponse.json({ success: true });
         }
 
-        // Trigger Edge Function asynchronously (do not await, Meta requires 200 OK within 3 seconds)
-        console.log(`[WEBHOOK] Triggering Edge Function /process-message for message: ${msg.text.body}`);
-        fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-message`, {
+        const traceId = Math.random().toString(36).substring(7);
+        console.log(`[WEBHOOK] [TRACE:${traceId}] Triggering Edge Function /process-message for message: ${msg.text.body}`);
+        
+        // Await the fetch to completely prevent Node's internal disjointed socket retry bug 
+        await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/process-message`, {
            method: 'POST',
            headers: {
              'Content-Type': 'application/json',
-             'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+             'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+             'X-Webhook-Trace-Id': traceId
            },
            body: JSON.stringify({
              clinic_id: clinic.id,
              patient_phone: msg.from,
-             message_text: msg.text.body
+             message_text: msg.text.body,
+             meta_message_id: msg.id
            })
-        }).catch(err => console.error("[WEBHOOK] Edge function trigger failed", err));
+        });
 
       } else {
         console.log("[WEBHOOK] No messages array found in changes.");

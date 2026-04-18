@@ -8,10 +8,26 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 serve(async (req) => {
-  try {
-    const { clinic_id, patient_phone, message_text } = await req.json();
+  const edgeExecId = Math.random().toString(36).substring(7);
+  const traceId = req.headers.get("X-Webhook-Trace-Id") || "NONE";
+  console.log(`[EDGE ENTRY] ExecId: ${edgeExecId} | TraceId: ${traceId} | User-Agent: ${req.headers.get("user-agent")}`);
 
-    // 1. Fetch clinic data & config
+  try {
+    const { clinic_id, patient_phone, message_text, meta_message_id } = await req.json();
+    console.log(`[EDGE PARSED] clinic_id: ${clinic_id}, text: ${message_text}`);
+
+    // Absolute Database-Backed Firewall Idempotency Lock
+    if (!meta_message_id) {
+        console.warn(`[SUPABASE FIREWALL] Blocked execution entirely because meta_message_id is missing. This happens when an outdated Vercel production server triggers the webhook.`);
+        return new Response(JSON.stringify({ success: true, bypassed: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const { error: lockErr } = await supabase.from('processed_webhooks').insert({ id: meta_message_id });
+    if (lockErr) {
+       console.warn(`[SUPABASE FIREWALL] Blocked duplicate execution for message: ${meta_message_id} (Trace: ${traceId})`);
+       return new Response(JSON.stringify({ success: true, bypassed: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
     const [{ data: clinic }, { data: content }] = await Promise.all([
       supabase.from("clinics").select("*").eq("id", clinic_id).single(),
       supabase.from("clinic_content").select("*").eq("clinic_id", clinic_id).single(),
