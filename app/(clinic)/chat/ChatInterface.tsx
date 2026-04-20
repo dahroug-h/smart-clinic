@@ -349,7 +349,7 @@ export default function ChatInterface({
                   ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   : <Plus className="w-3.5 h-3.5" />
                 }
-                <span>تجربة</span>
+                <span>محادثة تجريبية</span>
               </button>
 
               {/* Bot Toggle Switch */}
@@ -431,7 +431,7 @@ export default function ChatInterface({
               "h-16 border-b border-[var(--border)] px-4 flex items-center gap-3 shadow-sm z-10 shrink-0",
               isActiveTest ? "bg-teal-50" : "bg-[#f0f2f5]"
             )}>
-              <button 
+              <button
                 onClick={() => setSelectedConvId(null)}
                 className="md:hidden p-2 -mr-2 cursor-pointer text-gray-500 hover:text-gray-900 rounded-md hover:bg-gray-100 shrink-0"
               >
