@@ -17,6 +17,23 @@ export default async function ChatPage() {
 
   if (!clinic) redirect("/dashboard");
 
+  // Auto-cleanup: delete test conversations older than 24 hours
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: expiredTests } = await supabase
+    .from("conversations")
+    .select("id, patient_phone")
+    .eq("clinic_id", clinic.id)
+    .like("patient_phone", "test_%")
+    .lt("last_message_at", twentyFourHoursAgo);
+
+  if (expiredTests && expiredTests.length > 0) {
+    const expiredIds = expiredTests.map(c => c.id);
+    const expiredPhones = expiredTests.map(c => c.patient_phone);
+    await supabase.from("conversations").delete().in("id", expiredIds);
+    await supabase.from("patients").delete().eq("clinic_id", clinic.id).in("phone", expiredPhones);
+    await supabase.from("appointments").delete().eq("clinic_id", clinic.id).in("patient_phone", expiredPhones);
+  }
+
   // Fetch all conversations for this clinic
   const { data: conversations } = await supabase
     .from("conversations")

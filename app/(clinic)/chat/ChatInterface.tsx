@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { toggleBotActive } from "./actions";
-import { Send, Image as ImageIcon, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight } from "lucide-react";
+import { Send, Image as ImageIcon, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight, FlaskConical } from "lucide-react";
 import toast from "react-hot-toast";
 import clsx from "clsx";
 
@@ -53,6 +53,7 @@ export default function ChatInterface({
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [creatingTest, setCreatingTest] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -61,6 +62,9 @@ export default function ChatInterface({
   const activePatient = activeConversation
     ? patients.find(p => p.phone === activeConversation.patient_phone)
     : null;
+
+  const isTestConversation = (conv: Conversation) => conv.patient_phone.startsWith("test_");
+  const isActiveTest = activeConversation ? isTestConversation(activeConversation) : false;
 
   useEffect(() => {
     // Scroll to bottom when conversation changes or new message arrives
@@ -112,6 +116,37 @@ export default function ChatInterface({
     }
   };
 
+  // ─── Create a new test conversation ───
+  const handleCreateTest = async () => {
+    setCreatingTest(true);
+    try {
+      const res = await fetch("/api/chat/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clinicId })
+      });
+      if (!res.ok) throw new Error("Failed");
+      const data = await res.json();
+
+      const newConv: Conversation = {
+        id: data.conversationId,
+        clinic_id: clinicId,
+        patient_phone: data.patientPhone,
+        messages: [],
+        last_message_at: new Date().toISOString()
+      };
+
+      setConversations(prev => [newConv, ...prev]);
+      setSelectedConvId(data.conversationId);
+      toast.success("تم إنشاء محادثة تجريبية — اكتب كأنك المريض");
+    } catch (err) {
+      toast.error("فشل إنشاء المحادثة التجريبية");
+    } finally {
+      setCreatingTest(false);
+    }
+  };
+
+  // ─── Send message in a REAL conversation (agent → patient via WhatsApp) ───
   const handleSendMessage = async (mediaUrl?: string) => {
     if (!activeConversation) return;
     if (!inputText.trim() && !mediaUrl) return;
@@ -157,7 +192,6 @@ export default function ChatInterface({
       if (!res.ok) throw new Error("Failed");
     } catch (err) {
       toast.error("فشل إرسال الرسالة. تحقق من الواتساب.");
-      // Rollback optimistic update on failure (optional but recommended for robust UI)
       setConversations(prev => prev.map(c => {
         if (c.id === activeConversation.id) {
           return { ...c, messages: c.messages.filter(m => m.id !== optimisticMsg.id) };
@@ -169,7 +203,63 @@ export default function ChatInterface({
     }
   };
 
+  // ─── Send message in a TEST conversation (simulates patient → bot) ───
+  const handleTestSend = async () => {
+    if (!activeConversation || !inputText.trim()) return;
 
+    const messageContent = inputText.trim();
+    setInputText("");
+
+    // Optimistic: show user (patient) message immediately
+    const optimisticMsg: Message = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      type: 'text',
+      content: messageContent,
+      created_at: new Date().toISOString()
+    };
+
+    setConversations(prev => prev.map(c => {
+      if (c.id === activeConversation.id) {
+        return {
+          ...c,
+          messages: [...(c.messages || []), optimisticMsg],
+          last_message_at: new Date().toISOString()
+        };
+      }
+      return c;
+    }).sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()));
+
+    setIsSending(true);
+    try {
+      const res = await fetch("/api/chat/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clinicId,
+          patientPhone: activeConversation.patient_phone,
+          messageText: messageContent
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed");
+      }
+      // Realtime subscription will deliver the bot reply from DB
+    } catch (err: any) {
+      toast.error(err.message || "فشل إرسال الرسالة التجريبية. تأكد من إعدادات البوت.");
+      // Rollback optimistic message
+      setConversations(prev => prev.map(c => {
+        if (c.id === activeConversation.id) {
+          return { ...c, messages: c.messages.filter(m => m.id !== optimisticMsg.id) };
+        }
+        return c;
+      }));
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -202,6 +292,15 @@ export default function ChatInterface({
     }
   };
 
+  // Determine the correct send handler based on conversation type
+  const handleActiveSend = () => {
+    if (isActiveTest) {
+      handleTestSend();
+    } else {
+      handleSendMessage();
+    }
+  };
+
   return (
     <div className="flex h-full bg-[#f0f2f5] overflow-hidden">
 
@@ -226,6 +325,19 @@ export default function ChatInterface({
           </button>
         </div>
 
+        {/* Test Bot Button */}
+        <button
+          onClick={handleCreateTest}
+          disabled={creatingTest}
+          className="w-full p-3 border-b border-gray-100 flex items-center justify-center gap-2 text-sm text-[var(--accent)] hover:bg-teal-50 transition-colors disabled:opacity-50 shrink-0"
+        >
+          {creatingTest
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : <FlaskConical className="w-4 h-4" />
+          }
+          <span className="font-bold">تجربة جديدة 🧪</span>
+        </button>
+
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground text-sm">لا توجد محادثات</div>
@@ -233,6 +345,7 @@ export default function ChatInterface({
             conversations.map(conv => {
               const p = patients.find(pat => pat.phone === conv.patient_phone);
               const lastMsg = conv.messages && conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null;
+              const isTest = isTestConversation(conv);
 
               return (
                 <div
@@ -243,18 +356,23 @@ export default function ChatInterface({
                     selectedConvId === conv.id && "bg-[#ebebeb]"
                   )}
                 >
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 overflow-hidden shrink-0">
-                    <UserIcon className="w-6 h-6" />
+                  <div className={clsx(
+                    "w-12 h-12 rounded-full flex items-center justify-center overflow-hidden shrink-0",
+                    isTest ? "bg-teal-100 text-teal-600" : "bg-gray-200 text-gray-500"
+                  )}>
+                    {isTest ? <FlaskConical className="w-6 h-6" /> : <UserIcon className="w-6 h-6" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-bold truncate text-[var(--foreground)]">{p?.name || `+${conv.patient_phone.replace(/^\+/, '')}`}</span>
+                      <span className="font-bold truncate text-[var(--foreground)]">
+                        {isTest ? "عميل تجريبي 🧪" : (p?.name || `+${conv.patient_phone.replace(/^\+/, '')}`)}
+                      </span>
                       <span className="text-xs text-gray-400">
                         {new Date(conv.last_message_at).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                     <p className="text-sm text-gray-500 truncate" dir="auto">
-                      {lastMsg?.type === "image" ? "📷 صورة" : lastMsg?.content || "محادثة بدأت"}
+                      {lastMsg?.type === "image" ? "📷 صورة" : lastMsg?.content || (isTest ? "ابدأ المحادثة التجريبية..." : "محادثة بدأت")}
                     </p>
                   </div>
                 </div>
@@ -272,28 +390,46 @@ export default function ChatInterface({
         {activeConversation ? (
           <div className="flex-1 flex flex-col h-full absolute inset-0">
             {/* Chat Header */}
-            <div className="h-16 bg-[#f0f2f5] border-b border-[var(--border)] px-4 flex items-center gap-3 shadow-sm z-10 shrink-0">
+            <div className={clsx(
+              "h-16 border-b border-[var(--border)] px-4 flex items-center gap-3 shadow-sm z-10 shrink-0",
+              isActiveTest ? "bg-teal-50" : "bg-[#f0f2f5]"
+            )}>
               <button 
                 onClick={() => setSelectedConvId(null)}
                 className="md:hidden p-2 -mr-2 cursor-pointer text-gray-500 hover:text-gray-900 rounded-md hover:bg-gray-100 shrink-0"
               >
                 <ArrowRight className="w-6 h-6" />
               </button>
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 shrink-0">
-                <UserIcon className="w-5 h-5" />
+              <div className={clsx(
+                "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                isActiveTest ? "bg-teal-100 text-teal-600" : "bg-gray-200 text-gray-500"
+              )}>
+                {isActiveTest ? <FlaskConical className="w-5 h-5" /> : <UserIcon className="w-5 h-5" />}
               </div>
               <div className="min-w-0">
-                <h3 className="font-bold text-[var(--foreground)] truncate">{activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`}</h3>
-                <p className="text-xs text-gray-500 truncate" dir="ltr">+{activeConversation.patient_phone.replace(/^\+/, '')}</p>
+                <h3 className="font-bold text-[var(--foreground)] truncate">
+                  {isActiveTest ? "وضع التجربة 🧪" : (activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`)}
+                </h3>
+                <p className="text-xs text-gray-500 truncate" dir="ltr">
+                  {isActiveTest ? "أنت تكتب كمريض — البوت يرد عليك" : `+${activeConversation.patient_phone.replace(/^\+/, '')}`}
+                </p>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#efeae2]">
+              {/* Test mode hint at top of empty test chat */}
+              {isActiveTest && activeConversation.messages.length === 0 && (
+                <div className="flex justify-center">
+                  <div className="bg-white/80 backdrop-blur-sm text-gray-500 text-xs px-4 py-2 rounded-lg shadow-sm text-center max-w-xs">
+                    اكتب رسالة كأنك المريض وشوف رد البوت — التجربة تتحذف تلقائياً بعد ٢٤ ساعة
+                  </div>
+                </div>
+              )}
+
               {activeConversation.messages.map((msg, idx) => {
-                // Determine layout
-                // User (patient) = incoming = white bubble on right (in RTL)
-                // Assistant / Agent = outgoing = green bubble on left (in RTL)
+                // In test mode: user=patient (white, left in LTR), assistant=bot (green, right in LTR)
+                // In real mode: user=patient (white), assistant/agent=outgoing (green)
                 const isOutgoing = msg.role === "assistant" || msg.role === "agent";
 
                 let displayContent = msg.content || "";
@@ -313,11 +449,17 @@ export default function ChatInterface({
                       )}
                       dir="auto"
                     >
-                      {/* Sub-label for AI vs Manual */}
-                      {isOutgoing && (
-                        <div className="text-[10px] text-black-400 mb-1 flex justify-between items-center">
-                          <span>{msg.role === "agent" ? "يدوي" : " الرد الآلي"}</span>
+                      {/* Sub-label for AI vs Manual vs Test Patient */}
+                      {isActiveTest ? (
+                        <div className="text-[10px] text-gray-400 mb-1">
+                          <span>{isOutgoing ? "رد البوت" : "أنت (المريض)"}</span>
                         </div>
+                      ) : (
+                        isOutgoing && (
+                          <div className="text-[10px] text-black-400 mb-1 flex justify-between items-center">
+                            <span>{msg.role === "agent" ? "يدوي" : " الرد الآلي"}</span>
+                          </div>
+                        )
                       )}
 
                       {/* Content */}
@@ -331,9 +473,8 @@ export default function ChatInterface({
                         <p className="whitespace-pre-wrap text-black font-medium leading-relaxed">{displayContent}</p>
                       )}
 
-                      {/* Timestamp & Delete */}
+                      {/* Timestamp */}
                       <div className="flex justify-end items-center gap-2 mt-2">
-
                         {(msg.created_at || activeConversation.last_message_at) && (
                           <span className="text-[10px] text-gray-500">
                             {new Date(msg.created_at || activeConversation.last_message_at).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' })}
@@ -349,21 +490,26 @@ export default function ChatInterface({
 
             {/* Input Footer */}
             <div className="p-3 bg-[#f0f2f5] flex items-end gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingImage || isSending}
-                className="p-3 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200 transition-all focus:outline-none disabled:opacity-50"
-              >
-                {uploadingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-6 h-6" />}
-              </button>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-              />
+              {/* Hide image upload for test conversations */}
+              {!isActiveTest && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage || isSending}
+                    className="p-3 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200 transition-all focus:outline-none disabled:opacity-50"
+                  >
+                    {uploadingImage ? <Loader2 className="w-6 h-6 animate-spin" /> : <ImageIcon className="w-6 h-6" />}
+                  </button>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                  />
+                </>
+              )}
 
               <div className="flex-1 bg-white rounded-xl overflow-hidden shadow-sm">
                 <textarea
@@ -372,10 +518,10 @@ export default function ChatInterface({
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      handleSendMessage();
+                      handleActiveSend();
                     }
                   }}
-                  placeholder="اكتب رسالة..."
+                  placeholder={isActiveTest ? "اكتب كأنك المريض..." : "اكتب رسالة..."}
                   dir="auto"
                   className="w-full max-h-32 p-3 bg-transparent resize-none focus:outline-none"
                   rows={1}
@@ -383,7 +529,7 @@ export default function ChatInterface({
               </div>
 
               <button
-                onClick={() => handleSendMessage()}
+                onClick={handleActiveSend}
                 disabled={(!inputText.trim() && !uploadingImage) || isSending}
                 className="p-3 bg-[var(--accent)] text-white rounded-full hover:bg-teal-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md shrink-0"
               >
@@ -398,8 +544,6 @@ export default function ChatInterface({
           </div>
         )}
       </div>
-
-
 
     </div>
   );
