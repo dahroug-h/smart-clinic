@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { toggleBotActive } from "./actions";
-import { Send, Image as ImageIcon, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight, FlaskConical } from "lucide-react";
+import { Send, Image as ImageIcon, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight, FlaskConical, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import clsx from "clsx";
 
@@ -138,7 +138,7 @@ export default function ChatInterface({
 
       setConversations(prev => [newConv, ...prev]);
       setSelectedConvId(data.conversationId);
-      toast.success("تم إنشاء محادثة تجريبية — اكتب كأنك المريض");
+      toast.success("تم إنشاء محادثة تجريبية — اكتب كأنك المريض", { duration: 3000 });
     } catch (err) {
       toast.error("فشل إنشاء المحادثة التجريبية");
     } finally {
@@ -309,34 +309,42 @@ export default function ChatInterface({
         "w-full lg:w-1/4 bg-white border-l border-[var(--border)] flex-col",
         selectedConvId ? "hidden md:flex" : "flex"
       )}>
-        <div className="p-4 bg-[#f0f2f5] border-b border-[var(--border)] flex items-center justify-between shadow-sm shrink-0">
-          <h2 className="font-bold text-lg text-[var(--foreground)]">المحادثات</h2>
-          {/* Bot Toggle */}
+        <div className="p-3 bg-[#f0f2f5] border-b border-[var(--border)] shadow-sm shrink-0 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-lg text-[var(--foreground)]">المحادثات</h2>
+            {/* Bot Toggle Switch */}
+            <button
+              onClick={handleToggleBot}
+              className="flex items-center gap-2 cursor-pointer"
+              title={botActive ? "اضغط لإيقاف البوت" : "اضغط لتشغيل البوت"}
+            >
+              <span className={clsx("text-[11px] font-bold transition-colors", botActive ? "text-green-600" : "text-gray-400")}>
+                {botActive ? "يعمل" : "متوقف"}
+              </span>
+              <div className={clsx(
+                "relative w-9 h-5 rounded-full transition-colors duration-200",
+                botActive ? "bg-green-500" : "bg-gray-300"
+              )}>
+                <div className={clsx(
+                  "absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200",
+                  botActive ? "right-0.5" : "left-0.5"
+                )} />
+              </div>
+            </button>
+          </div>
+          {/* Test Chat Initiation Button */}
           <button
-            onClick={handleToggleBot}
-            className={clsx(
-              "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all",
-              botActive ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-red-100 text-red-700 hover:bg-red-200"
-            )}
-            title="إيقاف البوت للرد اليدوي"
+            onClick={handleCreateTest}
+            disabled={creatingTest}
+            className="w-full py-2 px-3 rounded-lg border border-dashed border-[var(--accent)]/40 flex items-center justify-center gap-2 text-xs text-[var(--accent)] hover:bg-teal-50 hover:border-[var(--accent)] transition-all disabled:opacity-50"
           >
-            <Bot className="w-4 h-4" />
-            {botActive ? "البوت يعمل" : "البوت متوقف"}
+            {creatingTest
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Plus className="w-3.5 h-3.5" />
+            }
+            <span className="font-bold">محادثة تجريبية جديدة</span>
           </button>
         </div>
-
-        {/* Test Bot Button */}
-        <button
-          onClick={handleCreateTest}
-          disabled={creatingTest}
-          className="w-full p-3 border-b border-gray-100 flex items-center justify-center gap-2 text-sm text-[var(--accent)] hover:bg-teal-50 transition-colors disabled:opacity-50 shrink-0"
-        >
-          {creatingTest
-            ? <Loader2 className="w-4 h-4 animate-spin" />
-            : <FlaskConical className="w-4 h-4" />
-          }
-          <span className="font-bold">تجربة جديدة 🧪</span>
-        </button>
 
         <div className="flex-1 overflow-y-auto">
           {conversations.length === 0 ? (
@@ -365,7 +373,7 @@ export default function ChatInterface({
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-1">
                       <span className="font-bold truncate text-[var(--foreground)]">
-                        {isTest ? "عميل تجريبي 🧪" : (p?.name || `+${conv.patient_phone.replace(/^\+/, '')}`)}
+                        {isTest ? "عميل تجريبي" : (p?.name || `+${conv.patient_phone.replace(/^\+/, '')}`)}
                       </span>
                       <span className="text-xs text-gray-400">
                         {new Date(conv.last_message_at).toLocaleTimeString("ar-EG", { hour: '2-digit', minute: '2-digit' })}
@@ -408,7 +416,7 @@ export default function ChatInterface({
               </div>
               <div className="min-w-0">
                 <h3 className="font-bold text-[var(--foreground)] truncate">
-                  {isActiveTest ? "وضع التجربة 🧪" : (activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`)}
+                  {isActiveTest ? "وضع التجربة" : (activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`)}
                 </h3>
                 <p className="text-xs text-gray-500 truncate" dir="ltr">
                   {isActiveTest ? "أنت تكتب كمريض — البوت يرد عليك" : `+${activeConversation.patient_phone.replace(/^\+/, '')}`}
