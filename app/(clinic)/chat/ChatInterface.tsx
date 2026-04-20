@@ -335,40 +335,43 @@ export default function ChatInterface({
       )}>
         <div className="p-3 bg-[#f0f2f5] border-b border-[var(--border)] shadow-sm shrink-0">
           <div className="flex items-center justify-between gap-2">
-            {/* Test Chat Button */}
-            <button
-              onClick={handleCreateTest}
-              disabled={creatingTest}
-              className="p-2 rounded-lg border border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-teal-50 hover:border-[var(--accent)] transition-all disabled:opacity-50 shrink-0"
-              title="محادثة تجريبية جديدة"
-            >
-              {creatingTest
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <Plus className="w-4 h-4" />
-              }
-            </button>
-
             <h2 className="font-bold text-lg text-[var(--foreground)]">المحادثات</h2>
 
-            {/* Bot Toggle Switch */}
-            <button
-              onClick={handleToggleBot}
-              className="flex items-center gap-1.5 cursor-pointer shrink-0"
-              title={botActive ? "اضغط لإيقاف البوت" : "اضغط لتشغيل البوت"}
-            >
-              <span className={clsx("text-[10px] font-bold transition-colors", botActive ? "text-green-600" : "text-gray-400")}>
-                {botActive ? "يعمل" : "متوقف"}
-              </span>
-              <div className={clsx(
-                "relative w-9 h-5 rounded-full transition-colors duration-200",
-                botActive ? "bg-green-500" : "bg-gray-300"
-              )}>
+            <div className="flex items-center gap-2">
+              {/* Test Chat Button */}
+              <button
+                onClick={handleCreateTest}
+                disabled={creatingTest}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-teal-50 hover:border-[var(--accent)] transition-all disabled:opacity-50 text-xs font-bold shrink-0"
+                title="محادثة تجريبية جديدة"
+              >
+                {creatingTest
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : <Plus className="w-3.5 h-3.5" />
+                }
+                <span>تجربة</span>
+              </button>
+
+              {/* Bot Toggle Switch */}
+              <button
+                onClick={handleToggleBot}
+                className="flex items-center gap-1.5 cursor-pointer shrink-0"
+                title={botActive ? "اضغط لإيقاف البوت" : "اضغط لتشغيل البوت"}
+              >
+                <span className={clsx("text-[10px] font-bold transition-colors", botActive ? "text-green-600" : "text-gray-400")}>
+                  {botActive ? "يعمل" : "متوقف"}
+                </span>
                 <div className={clsx(
-                  "absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200",
-                  botActive ? "right-0.5" : "left-0.5"
-                )} />
-              </div>
-            </button>
+                  "relative w-9 h-5 rounded-full transition-colors duration-200",
+                  botActive ? "bg-green-500" : "bg-gray-300"
+                )}>
+                  <div className={clsx(
+                    "absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200",
+                    botActive ? "right-0.5" : "left-0.5"
+                  )} />
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
