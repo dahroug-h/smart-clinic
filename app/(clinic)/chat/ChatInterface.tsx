@@ -3,9 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { toggleBotActive } from "./actions";
-import { Send, Image as ImageIcon, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight, FlaskConical, Plus } from "lucide-react";
+import { Send, Image as ImageIcon, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight, FlaskConical, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import clsx from "clsx";
+import ConfirmModal from "@/components/ConfirmModal";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,6 +55,7 @@ export default function ChatInterface({
   const [isSending, setIsSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [creatingTest, setCreatingTest] = useState(false);
+  const [convToDelete, setConvToDelete] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -301,6 +303,28 @@ export default function ChatInterface({
     }
   };
 
+  // ─── Delete a conversation from the panel ───
+  const handleDeleteConversation = async () => {
+    if (!convToDelete) return;
+    try {
+      const res = await fetch("/api/chat/conversation", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clinicId, conversationId: convToDelete })
+      });
+      if (!res.ok) throw new Error("Failed");
+
+      // Remove from local state
+      setConversations(prev => prev.filter(c => c.id !== convToDelete));
+      if (selectedConvId === convToDelete) setSelectedConvId(null);
+      toast.success("تم حذف المحادثة");
+    } catch (err) {
+      toast.error("فشل حذف المحادثة");
+    } finally {
+      setConvToDelete(null);
+    }
+  };
+
   return (
     <div className="flex h-full bg-[#f0f2f5] overflow-hidden">
 
@@ -309,16 +333,30 @@ export default function ChatInterface({
         "w-full lg:w-1/4 bg-white border-l border-[var(--border)] flex-col",
         selectedConvId ? "hidden md:flex" : "flex"
       )}>
-        <div className="p-3 bg-[#f0f2f5] border-b border-[var(--border)] shadow-sm shrink-0 space-y-2.5">
-          <div className="flex items-center justify-between">
+        <div className="p-3 bg-[#f0f2f5] border-b border-[var(--border)] shadow-sm shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            {/* Test Chat Button */}
+            <button
+              onClick={handleCreateTest}
+              disabled={creatingTest}
+              className="p-2 rounded-lg border border-dashed border-[var(--accent)]/40 text-[var(--accent)] hover:bg-teal-50 hover:border-[var(--accent)] transition-all disabled:opacity-50 shrink-0"
+              title="محادثة تجريبية جديدة"
+            >
+              {creatingTest
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Plus className="w-4 h-4" />
+              }
+            </button>
+
             <h2 className="font-bold text-lg text-[var(--foreground)]">المحادثات</h2>
+
             {/* Bot Toggle Switch */}
             <button
               onClick={handleToggleBot}
-              className="flex items-center gap-2 cursor-pointer"
+              className="flex items-center gap-1.5 cursor-pointer shrink-0"
               title={botActive ? "اضغط لإيقاف البوت" : "اضغط لتشغيل البوت"}
             >
-              <span className={clsx("text-[11px] font-bold transition-colors", botActive ? "text-green-600" : "text-gray-400")}>
+              <span className={clsx("text-[10px] font-bold transition-colors", botActive ? "text-green-600" : "text-gray-400")}>
                 {botActive ? "يعمل" : "متوقف"}
               </span>
               <div className={clsx(
@@ -332,18 +370,6 @@ export default function ChatInterface({
               </div>
             </button>
           </div>
-          {/* Test Chat Initiation Button */}
-          <button
-            onClick={handleCreateTest}
-            disabled={creatingTest}
-            className="w-full py-2 px-3 rounded-lg border border-dashed border-[var(--accent)]/40 flex items-center justify-center gap-2 text-xs text-[var(--accent)] hover:bg-teal-50 hover:border-[var(--accent)] transition-all disabled:opacity-50"
-          >
-            {creatingTest
-              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              : <Plus className="w-3.5 h-3.5" />
-            }
-            <span className="font-bold">محادثة تجريبية جديدة</span>
-          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -414,7 +440,7 @@ export default function ChatInterface({
               )}>
                 {isActiveTest ? <FlaskConical className="w-5 h-5" /> : <UserIcon className="w-5 h-5" />}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h3 className="font-bold text-[var(--foreground)] truncate">
                   {isActiveTest ? "وضع التجربة" : (activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`)}
                 </h3>
@@ -422,6 +448,14 @@ export default function ChatInterface({
                   {isActiveTest ? "أنت تكتب كمريض — البوت يرد عليك" : `+${activeConversation.patient_phone.replace(/^\+/, '')}`}
                 </p>
               </div>
+              {/* Delete Conversation */}
+              <button
+                onClick={() => setConvToDelete(activeConversation.id)}
+                className="p-2 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0"
+                title="حذف المحادثة"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Messages */}
@@ -552,6 +586,17 @@ export default function ChatInterface({
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!convToDelete}
+        onClose={() => setConvToDelete(null)}
+        onConfirm={handleDeleteConversation}
+        title="حذف المحادثة"
+        message="هل أنت متأكد من حذف هذه المحادثة؟ سيتم حذفها نهائياً من لوحة التحكم."
+        confirmText="نعم، احذف"
+        cancelText="تراجع"
+        isDestructive={true}
+      />
 
     </div>
   );
