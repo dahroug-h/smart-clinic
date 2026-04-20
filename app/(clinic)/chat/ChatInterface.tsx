@@ -447,7 +447,7 @@ export default function ChatInterface({
                 <h3 className="font-bold text-[var(--foreground)] truncate">
                   {isActiveTest ? "وضع التجربة" : (activePatient?.name || `+${activeConversation.patient_phone.replace(/^\+/, '')}`)}
                 </h3>
-                <p className="text-xs text-gray-500 truncate" dir="ltr">
+                <p className="text-xs text-gray-500 truncate" dir={isActiveTest ? "rtl" : "ltr"}>
                   {isActiveTest ? "أنت تكتب كمريض — البوت يرد عليك" : `+${activeConversation.patient_phone.replace(/^\+/, '')}`}
                 </p>
               </div>
