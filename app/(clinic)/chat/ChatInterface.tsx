@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { toggleBotActive } from "./actions";
 import { Send, Image as ImageIcon, Bot, User as UserIcon, Loader2, MessageCircle, ArrowRight, FlaskConical, Plus, Trash2 } from "lucide-react";
@@ -72,6 +72,22 @@ export default function ChatInterface({
     // Scroll to bottom when conversation changes or new message arrives
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeConversation?.messages]);
+
+  useEffect(() => {
+    // Handle ?phone= URL parameter to auto-select conversation
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const phoneParam = params.get("phone");
+      if (phoneParam && conversations.length > 0) {
+        const match = conversations.find(c => c.patient_phone === phoneParam);
+        if (match) {
+          setSelectedConvId(match.id);
+        }
+        // Clean up URL without triggering a re-render/reload
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [conversations.length]); // Run when conversations are loaded
 
   useEffect(() => {
     // Realtime subscription
@@ -485,8 +501,39 @@ export default function ChatInterface({
                   displayContent = displayContent.split("[ملاحظة للبوت:")[0].trim();
                 }
 
+                // --- Date Calculation for Separators ---
+                const msgDate = new Date(msg.created_at || activeConversation.last_message_at);
+                const prevMsg = idx > 0 ? activeConversation.messages[idx - 1] : null;
+                const prevMsgDate = prevMsg ? new Date(prevMsg.created_at || activeConversation.last_message_at) : null;
+                
+                let showDateHeader = false;
+                let dateHeaderText = "";
+                
+                if (!prevMsgDate || msgDate.toDateString() !== prevMsgDate.toDateString()) {
+                  showDateHeader = true;
+                  const today = new Date();
+                  const yesterday = new Date(today);
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  
+                  if (msgDate.toDateString() === today.toDateString()) {
+                    dateHeaderText = "اليوم";
+                  } else if (msgDate.toDateString() === yesterday.toDateString()) {
+                    dateHeaderText = "أمس";
+                  } else {
+                    dateHeaderText = msgDate.toLocaleDateString("ar-EG", { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+                  }
+                }
+
                 return (
-                  <div key={msg.id || idx.toString()} className={clsx("flex", isOutgoing ? "justify-end" : "justify-start")}>
+                  <React.Fragment key={msg.id || idx.toString()}>
+                    {showDateHeader && (
+                      <div className="flex justify-center my-4">
+                        <div className="bg-[#dfe5e7] text-gray-600 text-[11.5px] font-medium px-3 py-1 rounded-lg shadow-sm">
+                          {dateHeaderText}
+                        </div>
+                      </div>
+                    )}
+                    <div className={clsx("flex", isOutgoing ? "justify-end" : "justify-start")}>
                     <div
                       className={clsx(
                         "relative group max-w-[80%] md:max-w-[65%] rounded-lg p-3 shadow-sm",
@@ -527,7 +574,8 @@ export default function ChatInterface({
                         )}
                       </div>
                     </div>
-                  </div>
+                    </div>
+                  </React.Fragment>
                 );
               })}
               <div ref={chatBottomRef} />

@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/utils/supabase";
+import { MessageCircle } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import clsx from "clsx";
 import Link from "next/link";
@@ -144,7 +145,7 @@ export default async function DashboardPage() {
           <table className="w-full text-right text-sm">
             <thead className="bg-gray-50 text-muted-foreground">
             <tr>
-              <th className="px-6 py-3 font-medium">اسم المريض</th>
+              <th className="px-6 py-3 font-medium">ملاحظات</th>
               <th className="px-6 py-3 font-medium">التاريخ</th>
               <th className="px-6 py-3 font-medium">الوقت</th>
               <th className="px-6 py-3 font-medium">الحالة</th>
@@ -184,8 +185,17 @@ export default async function DashboardPage() {
                         {app.status === 'confirmed' ? 'مؤكد' : 'ملغي'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-left">
-                      <DeleteButton id={app.id} />
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link 
+                          href={`/chat?phone=${encodeURIComponent(app.patient_phone)}`} 
+                          className="p-1.5 rounded-md text-gray-400 hover:text-[var(--accent)] hover:bg-[#e6f4f1] transition-colors" 
+                          title="فتح المحادثة"
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                        </Link>
+                        <DeleteButton id={app.id} />
+                      </div>
                     </td>
                   </tr>
                 );
@@ -231,7 +241,14 @@ export default async function DashboardPage() {
                     <span className="font-bold text-[var(--accent)] align-middle" dir="ltr">{displayTime}</span>
                   </div>
                   
-                  <div className="pt-2 border-t border-gray-100 flex justify-end">
+                  <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
+                    <Link 
+                      href={`/chat?phone=${encodeURIComponent(app.patient_phone)}`} 
+                      className="p-1.5 rounded-md text-gray-400 hover:text-[var(--accent)] hover:bg-[#e6f4f1] transition-colors" 
+                      title="فتح المحادثة"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                    </Link>
                     <DeleteButton id={app.id} />
                   </div>
                 </div>
