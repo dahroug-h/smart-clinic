@@ -6,6 +6,7 @@ import clsx from "clsx";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import DeleteButton from "./DeleteButton";
+import CompleteButton from "./CompleteButton";
 
 export default async function DashboardPage() {
   const { userId } = auth();
@@ -145,9 +146,10 @@ export default async function DashboardPage() {
           <table className="w-full text-right text-sm">
             <thead className="bg-gray-50 text-muted-foreground">
             <tr>
-              <th className="px-6 py-3 font-medium">ملاحظات</th>
+              <th className="px-6 py-3 font-medium">اسم المريض</th>
               <th className="px-6 py-3 font-medium">التاريخ</th>
               <th className="px-6 py-3 font-medium">الوقت</th>
+              <th className="px-6 py-3 font-medium text-center">ملاحظات</th>
               <th className="px-6 py-3 font-medium">الحالة</th>
               <th className="px-6 py-3 font-medium text-left">الإجراءات</th>
             </tr>
@@ -155,7 +157,7 @@ export default async function DashboardPage() {
           <tbody className="divide-y divide-[var(--border)]">
             {appointments?.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                   لا توجد مواعيد حتى الآن
                 </td>
               </tr>
@@ -177,12 +179,16 @@ export default async function DashboardPage() {
                     <td className="px-6 py-4 font-medium">{app.patient_name || app.patient_phone}</td>
                     <td className="px-6 py-4">{app.appointment_date}</td>
                     <td className="px-6 py-4" dir="ltr">{displayTime}</td>
+                    <td className="px-6 py-4 text-center text-gray-500 text-xs max-w-[150px] truncate" title={app.notes || "لا يوجد"}>
+                      {app.notes || "-"}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={clsx(
                         "px-2.5 py-1 text-xs rounded-full font-medium",
-                        app.status === 'confirmed' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                        app.status === 'confirmed' ? "bg-amber-100 text-amber-800" : 
+                        app.status === 'completed' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                       )}>
-                        {app.status === 'confirmed' ? 'مؤكد' : 'ملغي'}
+                        {app.status === 'confirmed' ? 'مؤكد' : app.status === 'completed' ? 'تم' : 'ملغى'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -194,6 +200,7 @@ export default async function DashboardPage() {
                         >
                           <MessageCircle className="w-5 h-5" />
                         </Link>
+                        {app.status !== 'completed' && <CompleteButton id={app.id} />}
                         <DeleteButton id={app.id} />
                       </div>
                     </td>
@@ -230,9 +237,10 @@ export default async function DashboardPage() {
                     <h4 className="font-bold text-[var(--foreground)] truncate">{app.patient_name || app.patient_phone}</h4>
                     <span className={clsx(
                       "px-2.5 py-1 text-[10px] rounded-full font-bold shrink-0",
-                      app.status === 'confirmed' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                      app.status === 'confirmed' ? "bg-amber-100 text-amber-800" : 
+                      app.status === 'completed' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                     )}>
-                      {app.status === 'confirmed' ? 'مؤكد' : 'ملغي'}
+                      {app.status === 'confirmed' ? 'مؤكد' : app.status === 'completed' ? 'تم' : 'ملغى'}
                     </span>
                   </div>
                   
@@ -240,6 +248,13 @@ export default async function DashboardPage() {
                     <span className="font-medium align-middle">{app.appointment_date}</span>
                     <span className="font-bold text-[var(--accent)] align-middle" dir="ltr">{displayTime}</span>
                   </div>
+
+                  {(app.notes || true) && (
+                    <div className="text-xs text-gray-500 px-1 truncate flex items-center gap-2">
+                       <span className="font-bold">ملاحظات:</span>
+                       <span>{app.notes || "-"}</span>
+                    </div>
+                  )}
                   
                   <div className="pt-2 border-t border-gray-100 flex items-center justify-end gap-2">
                     <Link 
@@ -249,6 +264,7 @@ export default async function DashboardPage() {
                     >
                       <MessageCircle className="w-5 h-5" />
                     </Link>
+                    {app.status !== 'completed' && <CompleteButton id={app.id} />}
                     <DeleteButton id={app.id} />
                   </div>
                 </div>

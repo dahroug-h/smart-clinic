@@ -253,6 +253,13 @@ ${content.cancellation_allowed
 
     // 7. Execute Actions (book, cancel)
     if (action?.action === "book") {
+      // If the patient is editing or making a new booking, cancel any existing active ones first
+      const { data: existingAppts } = await supabase.from("appointments").select("id").match({ clinic_id, patient_phone, status: "confirmed" });
+      if (existingAppts && existingAppts.length > 0) {
+        const idsToCancel = existingAppts.map((a: any) => a.id);
+        await supabase.from("appointments").update({ status: "cancelled" }).in("id", idsToCancel);
+      }
+
       await supabase.from("appointments").insert({
         clinic_id,
         patient_phone,
@@ -270,11 +277,11 @@ ${content.cancellation_allowed
 
       await supabase.from("analytics_events").insert({ clinic_id, event_type: "appointment_booked" });
     } else if (action?.action === "cancel") {
-      // logic to cancel (hard delete)
+      // logic to cancel (soft delete / update status)
       const { data: toCancelList } = await supabase.from("appointments").select("id").match({ clinic_id, patient_phone, status: "confirmed" });
       if (toCancelList && toCancelList.length > 0) {
         const ids = toCancelList.map((t: any) => t.id);
-        await supabase.from("appointments").delete().in("id", ids);
+        await supabase.from("appointments").update({ status: "cancelled" }).in("id", ids);
         await supabase.from("analytics_events").insert({ clinic_id, event_type: "appointment_cancelled" });
       }
     }

@@ -17,3 +17,19 @@ export async function deleteAppointment(appointmentId: string) {
 
   revalidatePath("/dashboard");
 }
+
+export async function completeAppointment(appointmentId: string) {
+  const supabase = createServerSupabaseClient();
+  
+  const { error } = await supabase
+    .from("appointments")
+    .update({ status: 'completed' })
+    .eq("id", appointmentId);
+    
+  if (error) {
+    console.error("Complete appointment error:", error);
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/dashboard");
+}
