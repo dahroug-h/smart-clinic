@@ -6,10 +6,12 @@ import clsx from "clsx";
 export default function AdminClinicsTable({ clinics }: { clinics: any[] }) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredClinics = clinics.filter(c => 
-    c.payment_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.clinic_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredClinics = clinics.filter(c => {
+    const code = c.payment_code ? String(c.payment_code).toLowerCase() : "";
+    const name = c.clinic_name ? String(c.clinic_name).toLowerCase() : "";
+    const term = searchTerm.toLowerCase();
+    return code.includes(term) || name.includes(term);
+  });
 
   return (
     <div className="space-y-4">
