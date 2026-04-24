@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+export const maxDuration = 60; // Allow up to 60 seconds to accommodate slow LLM responses
 import { createAdminSupabaseClient } from '@/lib/utils/supabase';
 
 // In-memory idempotency lock prevents Meta from retrying while AI thinks

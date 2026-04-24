@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // Allow up to 60 seconds to accommodate slow LLM responses
 import { auth } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/utils/supabase';
 
